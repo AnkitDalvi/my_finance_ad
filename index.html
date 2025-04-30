@@ -1,296 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Expense Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- SheetJS for Excel export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f4f8;
       margin: 0;
       padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    h2 {
-      text-align: center;
-    }
-    form {
+    form, .filter-section, .delete-section {
       background: #fff;
       padding: 20px;
+      margin-top: 20px;
       border-radius: 12px;
-      max-width: 600px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       width: 100%;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
+      max-width: 600px;
     }
     input, select, button {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
+      padding: 10px;
+      margin-top: 10px;
       border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
+      border-radius: 6px;
+      font-size: 1rem;
     }
     button {
-      background-color: #007BFF;
+      background: #007bff;
       color: white;
-      font-weight: bold;
-      border: none;
-      margin-top: 15px;
       cursor: pointer;
+      border: none;
     }
     button:hover {
-      background-color: #0056b3;
+      background: #0056b3;
     }
-    .section {
+    footer {
       margin-top: 30px;
-      max-width: 600px;
-      width: 100%;
+      font-size: 0.9rem;
+      color: #555;
     }
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      color: #666;
-      font-size: 0.9em;
-    }
-    /* Modal Styling */
-    #modal {
-      display: none;
+    .popup {
       position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.6);
-    }
-    #modal-content {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 1000px;
-      overflow-x: auto;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 10px;
-    }
-    th, td {
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
       border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background: #f0f0f0;
-    }
-    @media (max-width: 768px) {
-      form, .section {
-        padding: 15px;
-      }
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
+  <form id="expense-form" onsubmit="submitForm(event)">
+    <h2>Expense Entry</h2>
+    <input type="text" id="uniqueId" name="uniqueId" readonly />
+    <input type="date" id="date" name="date" required />
+    <input type="number" id="amount" name="amount" required placeholder="Amount" />
+    <select id="currency" name="currency">
+      <option>AED</option><option>USD</option><option>INR</option><option>EURO</option>
+    </select>
+    <select id="category" name="category">
+      <option>Food</option><option>Groceries</option><option>Transportation</option><option>Rent</option>
+      <option>Utilities</option><option>Shopping</option><option>Health</option><option>Education</option>
+      <option>Entertainment</option><option>Savings</option><option>Debt Payback/ Loan</option>
+    </select>
+    <input type="text" id="description" name="description" maxlength="200" placeholder="Description (max 16 words)" />
+    <select id="type" name="type">
+      <option>Expense</option><option>Income</option>
+    </select>
+    <select id="paymentMethod" name="paymentMethod">
+      <option>Debit Card</option><option>Credit Card</option><option>Bank Transfer</option>
+      <option>Cheque</option><option>Cash</option>
+    </select>
+    <select id="tag" name="tag">
+      <option>Regular</option><option>Weekend</option><option>Official</option>
+      <option>Recurring</option><option>Vacation</option>
+    </select>
+    <button type="submit">Submit</button>
+  </form>
 
-<h2>Expense Entry Form</h2>
-<form id="entryForm">
-  <label>Unique ID</label>
-  <input type="text" id="uniqueId" readonly>
-
-  <label>Date</label>
-  <input type="date" id="date" required>
-
-  <label>Amount</label>
-  <input type="number" id="amount" required>
-
-  <label>Currency</label>
-  <select id="currency">
-    <option>AED</option>
-    <option>USD</option>
-    <option>INR</option>
-    <option>EURO</option>
-  </select>
-
-  <label>Category</label>
-  <select id="category">
-    <option>Food</option>
-    <option>Groceries</option>
-    <option>Transportation</option>
-    <option>Rent</option>
-    <option>Utilities</option>
-    <option>Shopping</option>
-    <option>Health</option>
-    <option>Education</option>
-    <option>Entertainment</option>
-    <option>Savings</option>
-    <option>Debt Payback/ Loan</option>
-  </select>
-
-  <label>Description</label>
-  <input type="text" id="description" maxlength="200" placeholder="Max 16 words" required>
-
-  <label>Type</label>
-  <select id="type">
-    <option>Expense</option>
-    <option>Income</option>
-  </select>
-
-  <label>Payment Method</label>
-  <select id="paymentMethod">
-    <option>Debit Card</option>
-    <option>Credit Card</option>
-    <option>Bank Transfer</option>
-    <option>Cheque</option>
-    <option>Cash</option>
-  </select>
-
-  <label>Tag</label>
-  <select id="tag">
-    <option>Regular</option>
-    <option>Weekend</option>
-    <option>Official</option>
-    <option>Recurring</option>
-    <option>Vacation</option>
-  </select>
-
-  <button type="submit">Submit</button>
-</form>
-
-<div class="section">
-  <h2>Filter Entries</h2>
-  <label>Start Date</label>
-  <input type="date" id="startDate">
-  <label>End Date</label>
-  <input type="date" id="endDate">
-  <button onclick="applyFilter()">Apply Filter</button>
-</div>
-
-<div class="section">
-  <h2>Delete Entry</h2>
-  <label>Enter Unique ID</label>
-  <input type="text" id="deleteId">
-  <button onclick="deleteEntry()">Delete Entry</button>
-</div>
-
-<div class="footer">Made with love by Ankit Dalvi ❤️</div>
-
-<!-- Modal for Filtered Table -->
-<div id="modal">
-  <div id="modal-content">
-    <span id="close-modal" style="float:right; cursor:pointer;">&times;</span>
-    <h2>Filtered Results</h2>
-    <div id="table-container"></div>
-    <button onclick="exportToExcel()">Download as Excel</button>
+  <div class="filter-section">
+    <h2>Filter Entries</h2>
+    <input type="date" id="filterStartDate" />
+    <input type="date" id="filterEndDate" />
+    <button onclick="applyFilter()">Apply Filter</button>
   </div>
-</div>
 
-<script>
-  function generateUniqueId() {
-    const now = new Date();
-    const pad = (n) => n.toString().padStart(2, '0');
-    const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const random = Math.floor(Math.random() * 900 + 100);
-    return `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${time}-${random}`;
-  }
+  <div class="delete-section">
+    <h2>Delete Entry</h2>
+    <input type="text" id="deleteId" placeholder="Enter Unique ID" />
+    <button onclick="deleteEntry()">Delete</button>
+  </div>
 
-  document.getElementById("uniqueId").value = generateUniqueId();
-  document.getElementById("date").valueAsDate = new Date();
+  <div id="popup" class="popup">
+    <h3>Filtered Results</h3>
+    <pre id="popupContent"></pre>
+    <button onclick="downloadFiltered()">Download Excel</button>
+    <button onclick="closePopup()">Close</button>
+  </div>
 
-  function getEntries() {
-    return JSON.parse(localStorage.getItem("entries") || "[]");
-  }
+  <footer>Powered with love by Ankit Dalvi ❤️</footer>
 
-  function saveEntries(entries) {
-    localStorage.setItem("entries", JSON.stringify(entries));
-  }
+  <script>
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbxxSRUCwqG54X0XS18TjI-cZ9G7RyJcryG8cxD-yVRXQQL-5h9I1tlrTGwolHp8193NMA/exec";
 
-  document.getElementById("entryForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const entry = {
-      uniqueId: document.getElementById("uniqueId").value,
-      date: document.getElementById("date").value,
-      amount: parseFloat(document.getElementById("amount").value),
-      currency: document.getElementById("currency").value,
-      category: document.getElementById("category").value,
-      description: document.getElementById("description").value,
-      type: document.getElementById("type").value,
-      paymentMethod: document.getElementById("paymentMethod").value,
-      tag: document.getElementById("tag").value
+    function generateUniqueId() {
+      const now = new Date();
+      const date = now.toLocaleDateString('en-GB').split('/').join('-');
+      const time = now.toTimeString().split(' ')[0].replace(/:/g, '');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      return `${date}-${time}-${random}`;
+    }
+
+    window.onload = () => {
+      document.getElementById("uniqueId").value = generateUniqueId();
     };
 
-    const entries = getEntries();
-    entries.push(entry);
-    saveEntries(entries);
-    alert("Entry saved!");
-    this.reset();
-    document.getElementById("uniqueId").value = generateUniqueId();
-    document.getElementById("date").valueAsDate = new Date();
-  });
-
-  function applyFilter() {
-    const start = new Date(document.getElementById("startDate").value);
-    const end = new Date(document.getElementById("endDate").value);
-    const results = getEntries().filter(e => {
-      const date = new Date(e.date);
-      return date >= start && date <= end;
-    });
-
-    if (results.length === 0) {
-      alert("No entries found.");
-      return;
+    function submitForm(e) {
+      e.preventDefault();
+      const data = {
+        uniqueId: document.getElementById("uniqueId").value,
+        date: document.getElementById("date").value,
+        amount: document.getElementById("amount").value,
+        currency: document.getElementById("currency").value,
+        category: document.getElementById("category").value,
+        description: document.getElementById("description").value,
+        type: document.getElementById("type").value,
+        paymentMethod: document.getElementById("paymentMethod").value,
+        tag: document.getElementById("tag").value
+      };
+      fetch(SHEET_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submit", data })
+      })
+      .then(res => res.json())
+      .then(() => {
+        alert("✅ Entry submitted!");
+        document.getElementById("expense-form").reset();
+        document.getElementById("uniqueId").value = generateUniqueId();
+      });
     }
 
-    let table = `<table><thead><tr><th>Unique ID</th><th>Date</th><th>Amount</th><th>Currency</th><th>Category</th><th>Description</th><th>Type</th><th>Payment</th><th>Tag</th></tr></thead><tbody>`;
-    results.forEach(r => {
-      table += `<tr>
-        <td>${r.uniqueId}</td><td>${r.date}</td><td>${r.amount}</td><td>${r.currency}</td><td>${r.category}</td>
-        <td>${r.description}</td><td>${r.type}</td><td>${r.paymentMethod}</td><td>${r.tag}</td></tr>`;
-    });
-    table += `</tbody></table>`;
-
-    document.getElementById("table-container").innerHTML = table;
-    document.getElementById("modal").style.display = "block";
-  }
-
-  function exportToExcel() {
-    const table = document.querySelector("#table-container table");
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Filtered Results" });
-    XLSX.writeFile(wb, "filtered_data.xlsx");
-  }
-
-  function deleteEntry() {
-    const deleteId = document.getElementById("deleteId").value.trim();
-    if (!deleteId) return alert("Please enter a Unique ID.");
-    const entries = getEntries();
-    const updated = entries.filter(e => e.uniqueId !== deleteId);
-    if (updated.length === entries.length) return alert("No entry found.");
-    saveEntries(updated);
-    alert("Entry deleted.");
-    document.getElementById("deleteId").value = "";
-  }
-
-  document.getElementById("close-modal").onclick = () => {
-    document.getElementById("modal").style.display = "none";
-  };
-  window.onclick = function(e) {
-    if (e.target == document.getElementById("modal")) {
-      document.getElementById("modal").style.display = "none";
+    function applyFilter() {
+      const start = document.getElementById("filterStartDate").value;
+      const end = document.getElementById("filterEndDate").value;
+      fetch(SHEET_URL + `?action=filter&start=${start}&end=${end}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("popup").style.display = "block";
+          document.getElementById("popupContent").textContent = JSON.stringify(data.entries, null, 2);
+          window.filteredData = data.entries;
+        });
     }
-  };
-</script>
 
+    function downloadFiltered() {
+      const csvRows = [["Unique ID","Date","Amount","Currency","Category","Description","Type","Payment Method","Tag"]];
+      window.filteredData.forEach(row => csvRows.push(Object.values(row)));
+      const csv = csvRows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "Filtered_Expenses.csv";
+      a.click();
+    }
+
+    function deleteEntry() {
+      const id = document.getElementById("deleteId").value;
+      if (!id) return alert("Enter a valid Unique ID.");
+      fetch(SHEET_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", uniqueId: id })
+      })
+      .then(res => res.json())
+      .then(response => alert(response.message || "Deleted!"));
+    }
+
+    function closePopup() {
+      document.getElementById("popup").style.display = "none";
+    }
+  </script>
 </body>
 </html>
